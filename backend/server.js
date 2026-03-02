@@ -16,5 +16,10 @@ server.listen(port, () => {
 });
 
 io.on("connection", (socket) => {
-    console.log("A user connected");
+    //console.log("A user connected");
+    socket.on("userJoined", (data) => {
+        const {name, roomId, userId, host, presenter} = data;
+        socket.join(roomId);
+        socket.emit("UserIsJoined", {success: true})
+    })
 });
