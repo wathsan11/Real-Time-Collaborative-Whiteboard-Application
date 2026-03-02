@@ -10,6 +10,7 @@ const RoomPage = () => {
     const [tool, setTool] = useState('pencil');
     const [color, setColor] = useState('#000000');
     const [elements, setElements] = useState([]);
+    const [history, setHistory] = useState([]); 
 
     const handleClearCanvas = () => {
         const canvas = canvasRef.current;
@@ -17,9 +18,27 @@ const RoomPage = () => {
         ctx.fillStyle = "white";
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         setElements([]);
-    }     
+    } 
+    
+    const undo = () => {
+        setHistory((prevHistory) => [
+            ...prevHistory,
+            elements[elements.length - 1],
+        ]);
+        setElements((prevElements) => 
+            prevElements.slice(0, prevElements.length - 1)
+       );
+    }; 
 
-  return (
+    const redo = () => {
+        setElements((prevElements) => [
+            ...prevElements,
+            history[history.length - 1],
+        ]);
+        setHistory((prevHistory) => prevHistory.slice(0, prevHistory.length - 1));
+    };  
+
+return (
     <div className="row">
         <h1 className='text-center pt-3 py-3'>
             White Board Sharing App {''}
@@ -75,8 +94,14 @@ const RoomPage = () => {
 
             
             <div className="d-flex gap-2">
-                <button className='btn btn-primary'>Undo</button>
-                <button className='btn btn-outline-primary'>Redo</button>
+                <button className='btn btn-primary' 
+                    disabled={elements.length === 0}
+                    onClick = {() => undo ()}
+                >Undo</button>
+                <button className='btn btn-outline-primary'
+                    disabled={history.length < 1}
+                    onClick = {() => redo ()}
+                >Redo</button>
             </div>
 
             
