@@ -34,9 +34,9 @@ const CreateRoomForm = ({uuid, socket, setUser}) => {
                 type="text"
                 className="form-control my-2" 
                 id="name" 
-                placeholder="Enter your name" />
+                placeholder="Enter your name"
                 value={name}
-                onChange={(e)=>setName(e.target.value)}
+                onChange={(e)=>setName(e.target.value)} />
             </div>
             <div className="form-group border">
             <div className="input-group d-flex align-items-center justify-content-center">

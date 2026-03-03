@@ -15,11 +15,37 @@ server.listen(port, () => {
     console.log(`Server is running on port ${port}`)
 });
 
+let roomIdGlobal,imgURLGlobal;
+
 io.on("connection", (socket) => {
-    //console.log("A user connected");
+
     socket.on("userJoined", (data) => {
-        const {name, roomId, userId, host, presenter} = data;
+        const { roomId } = data;
+
         socket.join(roomId);
-        socket.emit("UserIsJoined", {success: true})
-    })
+
+        // save roomId inside this socket
+        socket.roomId = roomId;
+
+        socket.emit("UserIsJoined", { success: true });
+
+        // send existing image only to this new user
+        if (imgURLGlobal) {
+            socket.emit("whiteboardDataResponse", {
+                success: true,
+                imgURL: imgURLGlobal
+            });
+        }
+    });
+
+    socket.on("whiteboardData", (data) => {
+        imgURLGlobal = data;
+
+        // use socket.roomId instead of global
+        socket.broadcast.to(socket.roomId).emit("whiteboardDataResponse", {
+            success: true,
+            imgURL: data
+        });
+    });
+
 });

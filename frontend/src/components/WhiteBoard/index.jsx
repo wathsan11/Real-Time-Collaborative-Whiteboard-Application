@@ -1,10 +1,39 @@
-import { useEffect, useState, useLayoutEffect } from 'react';
+import { useEffect, useState, useLayoutEffect, use } from 'react';
 
-const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color}) => {
+const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color,user,socket}) => {
+
+    const [img,setImg] = useState(null);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handler = (data) => {
+      setImg(data.imgURL);
+    };
+
+    socket.on("whiteboardDataResponse", handler);
+
+    return () => {
+      socket.off?.("whiteboardDataResponse", handler);
+    };
+  },[socket]);
+
+
+    if(!user?.presenter) {
+    return(
+          <div 
+        className="border border-dark border-3 w-100 h-100 overflow"
+    >
+      <img src={img} alt='Real time white board image shared by presenter' className='w-100 h-100'/>
+    </div>
+    )
+  }
   const [isDrawing, setIsDrawing] = useState(false);
+
 
   const getCanvasPoint = (e) => {
     const canvas = canvasRef.current;
+    if (!canvas) return { offsetX: 0, offsetY: 0 };
     const rect = canvas.getBoundingClientRect();
 
     return {
@@ -15,7 +44,9 @@ const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color}) => 
     
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const parent = canvas.parentElement;
+    if (!parent) return;
     const rect = parent.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
 
@@ -74,6 +105,12 @@ const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color}) => 
         );
       }
     });
+
+    const canvasImage = canvasRef.current.toDataURL();
+    if (socket && typeof socket.emit === 'function') {
+      socket.emit("whiteboardData", canvasImage);
+    }
+
   }, [elements]);
 
   const handlePointerDown = (e) => {
@@ -176,6 +213,9 @@ const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color}) => 
     setIsDrawing(false);
   };
 
+  
+
+
   return (    
     <div 
         className="border border-dark border-3 w-100 h-100 overflow"
@@ -187,6 +227,7 @@ const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color}) => 
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         style={{ touchAction: 'none', cursor: 'crosshair' }}
+        
       />
     </div>
     );
