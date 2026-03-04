@@ -24,19 +24,36 @@ io.on("connection", (socket) => {
 
         socket.join(roomId);
 
+        const users = addUser({
+            name, 
+            userId, 
+            roomId, 
+            host,
+            presenter, 
+            socketId:socket.id});
+
+        //console.log(users);
+
+       // const users = addUser(data);
+
         // save roomId inside this socket
         socket.roomId = roomId;
 
-        socket.emit("UserIsJoined", { success: true });
+        socket.emit("UserIsJoined", { success: true , users});
+        socket.broadcast.to(roomId).emit("userJoinedMessageBroadcasted" , name )
+        socket.broadcast.to(roomId).emit("allUsers", users);
 
         // send existing image only to this new user
-        if (imgURLGlobal) {
-            socket.emit("whiteboardDataResponse", {
-                success: true,
-                imgURL: imgURLGlobal
-            });
-        }
-    });
+        // if (imgURLGlobal) {
+        //     socket.emit("whiteboardDataResponse", {
+        //         success: true,
+        //         imgURL: imgURLGlobal
+        //     });
+        // }
+
+        socket.broadcast.to(roomId).emit("WhiteBoardDataResponse", {
+        imgURL: imgURLGlobal,  
+     });
 
     socket.on("whiteboardData", (data) => {
         imgURLGlobal = data;
@@ -48,4 +65,19 @@ io.on("connection", (socket) => {
         });
     });
 
+    //console.log(socket.id);
+
+    socket.on("disconnect", () => {
+        const user = getUser(socket.id);
+        
+        //console.log("disconnected" , user);
+        if(user){
+            removeUser(socket.id);
+            socket.broadcast
+            .to(roomIdGlobal)
+            .emit("userLeftMessageBroadcasted" , user.name );
+            }
+    })
+
+    });
 });
