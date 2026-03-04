@@ -24,7 +24,15 @@ const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color,user,
           <div 
         className="border border-dark border-3 w-100 h-100 overflow"
     >
-      <img src={img} alt='Real time white board image shared by presenter' className='w-100 h-100'/>
+      <img 
+        src={img} 
+        alt='Real time white board image shared by presenter' 
+        //className='w-100 h-100'
+        style={{
+          height: window.innerHeight * 2,
+          width: "285%",
+        }}
+      />
     </div>
     )
   }

@@ -24,16 +24,33 @@ const socket = io(server, connectionOptions);
 const App = () => {
 
   const [user,setUser]= useState(null);
+  const [users ,  setUsers] = useState([]);
 
   useEffect(()=>{
     socket.on("UserIsJoined", (data) => {
       if(data.success){
         console.log("User joined");
+        setUsers(data.users);
       }
       else{
         console.log("User join error");
       }
     });
+
+    socket.on("allUsers  ", (data) => {
+      setUsers(data);
+    });
+
+    socket.on("userJoinedMessageBroadcasted", (data) => {
+      Console.log(`${data} joined the room`);
+      toast.info(`${data} joined the room`);
+    });
+
+    socket.on("userLeftMessageBroadcasted", (data) => {
+      Console.log(`${data} left the room`);
+      toast.info(`${data} left the room`);
+    });
+
   },[]);
 
   const uuid = () => {
@@ -49,9 +66,10 @@ const App = () => {
   return (
     <>
       <div className='container'>
+        <ToastContainer />
         <Routes>
           <Route path="/" element={<Forms uuid={uuid} socket={socket} setUser={setUser} />} />
-          <Route path="/:roomId" element={<RoomPage user={user} socket={socket} />} />
+          <Route path="/:roomId" element={<RoomPage user={user} socket={socket} users ={users} />} />
 
         </Routes>
         
