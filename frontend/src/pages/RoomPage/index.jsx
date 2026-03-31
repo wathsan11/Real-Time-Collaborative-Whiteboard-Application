@@ -1,8 +1,9 @@
 import { useRef, useState , useEffect } from 'react';
 import './index.css'
 import WhiteBoard from '../../components/WhiteBoard';
+import Chat from '../../components/ChatBar';
 
-const RoomPage = ({user,socket, users}) => {
+const RoomPage = ({user,socket, users = []}) => {
 
     const canvasRef = useRef(null);
     const ctxRef = useRef(null);
@@ -12,12 +13,37 @@ const RoomPage = ({user,socket, users}) => {
     const [elements, setElements] = useState([]);
     const [history, setHistory] = useState([]); 
     const [openedUserTab , setOpenedUserTab] = useState(false);
+    const [openedChatTab , setOpenedChatTab] = useState(false);
+    const [messages, setMessages] = useState([]);
 
-    // useEffect(() => {
-    //     return() => {
-    //         socket.emit("userLeft" , user);
-    //     }
-    // }, [])
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleChatHistory = (history = []) => {
+            setMessages(Array.isArray(history) ? history : []);
+        };
+
+        const handleChatMessage = (message) => {
+            setMessages((prev) => [...prev, message]);
+        };
+
+        socket.on("chatHistory", handleChatHistory);
+        socket.on("chatMessageReceived", handleChatMessage);
+
+        return () => {
+            socket.off("chatHistory", handleChatHistory);
+            socket.off("chatMessageReceived", handleChatMessage);
+        };
+    }, [socket]);
+
+    const handleSendMessage = (text) => {
+        if (!socket || !user?.roomId) return;
+        socket.emit("chatMessage", {
+            text,
+            name: user.name,
+            userId: user.userId,
+        });
+    };
 
     const handleClearCanvas = () => {
         const canvas = canvasRef.current;
@@ -52,33 +78,62 @@ return (
                     display:"block" , 
                     position:"absolute", 
                     top:"5%", 
-                    left:"5%" ,
+                    left:"3%" ,
                     height:"40px", 
-                    widht:"100px"
+                    width:"72px"
                 }}
-                onClick={()=> setOpenedTab(true)} 
+                onClick={()=> {
+                    setOpenedChatTab(false);
+                    setOpenedUserTab(true);
+                }} 
         >
             Users
         </button>
+        <button type="button" className="btn btn-primary"
+        style = {{
+                    display:"block" , 
+                    position:"absolute", 
+                    top:"5%", 
+                    left:"10%" ,
+                    height:"40px", 
+                    width:"72px"
+                }}
+                onClick={()=> {
+                    setOpenedUserTab(false);
+                    setOpenedChatTab(true);
+                }} 
+        >
+           Chats
+        </button>
         {
             openedUserTab && (
-                <div className="posotion-fixed top-0 h-100 text-white bg-dark" 
-                style={{widht:"250px" , left:"0%"}}> 
+                <div className="position-fixed top-0 h-100 text-white bg-dark" 
+                style={{width:"250px" , left:"0%"}}> 
                 <button type="button" 
-                onClick={()=> setOpenedTab(false)} 
+                onClick={()=> setOpenedUserTab(false)} 
                 className="btn btn-light btn-block w-100 mt-5">
                     Close
                 </button>
-                <div className="w-100 mt-5 pt-5">
-                    {users.map((user , index) =>(
-                        <p key={index *999} className="my-2 w-100">
-                            {user.name} {user && user.userId==user.userId &&"(You)"}
+                <div className="w-100 mt-5 pt-5 px-3">
+                    {users.map((roomUser , index) =>(
+                        <p key={`${roomUser.userId}-${index}`} className="my-2 w-100">
+                            {roomUser.name} {roomUser?.userId === user?.userId &&"(You)"}
                             </p>
                     ))}
                 </div>
-                {users.map((user , index) =>(
-                    <p key={index *999} className="my-2 text-center w-100">{user.name}</p>
-                ))}
+                </div>
+            )
+        }
+        {
+            openedChatTab && (
+                <div className="position-fixed top-0 h-100 text-white bg-dark chat-sidebar-wrap"
+                style={{width:"250px" , right:"0%"}}>
+                    <Chat 
+                        messages={messages}
+                        currentUserId={user?.userId}
+                        onSendMessage={handleSendMessage}
+                        onClose={() => setOpenedChatTab(false)}
+                    />
                 </div>
             )
         }
