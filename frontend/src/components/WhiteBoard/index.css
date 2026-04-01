@@ -1,0 +1,29 @@
+/* ── WhiteBoard Component ── */
+.whiteboard-canvas-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #ffffff;
+}
+
+.whiteboard-canvas-container canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ── Non-Presenter Viewer ── */
+.whiteboard-viewer {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: #ffffff;
+    -webkit-overflow-scrolling: touch;
+}
+
+.viewer-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+}

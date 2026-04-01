@@ -1,8 +1,9 @@
-import { useEffect, useState, useLayoutEffect, use } from 'react';
+import { useEffect, useState, useLayoutEffect } from 'react';
+import './index.css';
 
-const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color,user,socket}) => {
+const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color, user, socket}) => {
 
-    const [img,setImg] = useState(null);
+    const [img, setImg] = useState(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -21,17 +22,11 @@ const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color,user,
 
     if(!user?.presenter) {
     return(
-          <div 
-        className="border border-dark border-3 w-100 h-100 overflow"
-    >
+          <div className="whiteboard-viewer">
       <img 
         src={img} 
         alt='Real time white board image shared by presenter' 
-        //className='w-100 h-100'
-        style={{
-          height: window.innerHeight * 2,
-          width: "285%",
-        }}
+        className="viewer-image"
       />
     </div>
     )
@@ -55,20 +50,28 @@ const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color,user,
     if (!canvas) return;
     const parent = canvas.parentElement;
     if (!parent) return;
-    const rect = parent.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
 
-    canvas.width = Math.floor(rect.width * dpr);
-    canvas.height = Math.floor(rect.height * dpr);
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
+    const resizeCanvas = () => {
+      const rect = parent.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
 
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
 
-    ctxRef.current = ctx;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      ctxRef.current = ctx;
+    };
+
+    resizeCanvas();
+
+    window.addEventListener('resize', resizeCanvas);
+    return () => window.removeEventListener('resize', resizeCanvas);
   }, []);
 
   useLayoutEffect(() => {
@@ -221,13 +224,8 @@ const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color,user,
     setIsDrawing(false);
   };
 
-  
-
-
   return (    
-    <div 
-        className="border border-dark border-3 w-100 h-100 overflow"
-    >
+    <div className="whiteboard-canvas-container">
       <canvas 
         ref={canvasRef}
         onPointerDown={handlePointerDown}
@@ -235,7 +233,6 @@ const WhiteBoard = ({canvasRef, ctxRef, elements, setElements, tool, color,user,
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         style={{ touchAction: 'none', cursor: 'crosshair' }}
-        
       />
     </div>
     );

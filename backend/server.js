@@ -3,7 +3,14 @@ const app = express();
 
 const server = require("http").createServer(app);
 const { Server } = require("socket.io");
-const io = new Server(server);
+const { addUser, removeUser, getUser, getUsersInRoom } = require("./utils/users");
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 //routes
 app.get("/", (req,res)=>{
@@ -11,73 +18,52 @@ app.get("/", (req,res)=>{
 });
 
 const port = process.env.PORT || 5001;
-server.listen(port, () => {
+server.listen(port, "0.0.0.0", () => {
     console.log(`Server is running on port ${port}`)
 });
-
-let roomIdGlobal,imgURLGlobal;
 
 io.on("connection", (socket) => {
 
     socket.on("userJoined", (data) => {
-        const { roomId } = data;
+        const { name, userId, roomId, host, presenter } = data;
 
         socket.join(roomId);
 
-        const users = addUser({
+        const user = addUser({
             name, 
             userId, 
             roomId, 
             host,
             presenter, 
-            socketId:socket.id});
-
-        //console.log(users);
-
-       // const users = addUser(data);
+            socketId: socket.id
+        });
 
         // save roomId inside this socket
         socket.roomId = roomId;
 
-        socket.emit("UserIsJoined", { success: true , users});
-        socket.broadcast.to(roomId).emit("userJoinedMessageBroadcasted" , name )
-        socket.broadcast.to(roomId).emit("allUsers", users);
+        const usersInRoom = getUsersInRoom(roomId);
 
-        // send existing image only to this new user
-        // if (imgURLGlobal) {
-        //     socket.emit("whiteboardDataResponse", {
-        //         success: true,
-        //         imgURL: imgURLGlobal
-        //     });
-        // }
-
-        socket.broadcast.to(roomId).emit("WhiteBoardDataResponse", {
-        imgURL: imgURLGlobal,  
-     });
+        socket.emit("UserIsJoined", { success: true, users: usersInRoom });
+        socket.broadcast.to(roomId).emit("userJoinedMessageBroadcasted", name);
+        socket.broadcast.to(roomId).emit("allUsers", usersInRoom);
+    });
 
     socket.on("whiteboardData", (data) => {
-        imgURLGlobal = data;
-
-        // use socket.roomId instead of global
         socket.broadcast.to(socket.roomId).emit("whiteboardDataResponse", {
-            success: true,
             imgURL: data
         });
     });
 
-    //console.log(socket.id);
-
     socket.on("disconnect", () => {
         const user = getUser(socket.id);
         
-        //console.log("disconnected" , user);
         if(user){
             removeUser(socket.id);
+            const usersInRoom = getUsersInRoom(user.roomId);
             socket.broadcast
-            .to(roomIdGlobal)
-            .emit("userLeftMessageBroadcasted" , user.name );
-            }
-    })
-
+                .to(user.roomId)
+                .emit("userLeftMessageBroadcasted", user.name);
+            socket.broadcast.to(user.roomId).emit("allUsers", usersInRoom);
+        }
     });
 });
