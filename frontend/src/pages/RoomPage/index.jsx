@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import './index.css'
 import WhiteBoard from '../../components/WhiteBoard';
 import Chat from '../../components/ChatBar';
@@ -15,6 +16,13 @@ const RoomPage = ({user, socket, users = []}) => {
     const [openedUserTab, setOpenedUserTab] = useState(false);
     const [openedChatTab, setOpenedChatTab] = useState(false);
     const [messages, setMessages] = useState([]);
+    const [hasUnread, setHasUnread] = useState(false);
+    const chatOpenRef = useRef(false);
+
+    // Keep ref in sync with state so socket handler always sees the latest value
+    useEffect(() => {
+        chatOpenRef.current = openedChatTab;
+    }, [openedChatTab]);
 
     useEffect(() => {
         if (!socket) return;
@@ -25,6 +33,14 @@ const RoomPage = ({user, socket, users = []}) => {
 
         const handleChatMessage = (message) => {
             setMessages((prev) => [...prev, message]);
+            // Show toast & set unread dot if chat is closed and message is from someone else
+            if (!chatOpenRef.current && message.userId !== user?.userId) {
+                setHasUnread(true);
+                toast.info(`${message.name}: ${message.text}`, {
+                    autoClose: 3000,
+                    position: 'bottom-right',
+                });
+            }
         };
 
         socket.on("chatHistory", handleChatHistory);
@@ -107,6 +123,7 @@ return (
                     onClick={() => {
                         setOpenedUserTab(false);
                         setOpenedChatTab(true);
+                        setHasUnread(false);
                     }}
                     title="Chat"
                 >
@@ -114,6 +131,7 @@ return (
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                     </svg>
                     <span className="topbar-btn-label">Chat</span>
+                    {hasUnread && <span className="unread-dot"></span>}
                 </button>
             </div>
         </div>
