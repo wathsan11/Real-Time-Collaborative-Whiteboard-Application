@@ -1,9 +1,9 @@
-import { useRef, useState , useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import './index.css'
 import WhiteBoard from '../../components/WhiteBoard';
 import Chat from '../../components/ChatBar';
 
-const RoomPage = ({user,socket, users = []}) => {
+const RoomPage = ({user, socket, users = []}) => {
 
     const canvasRef = useRef(null);
     const ctxRef = useRef(null);
@@ -12,8 +12,8 @@ const RoomPage = ({user,socket, users = []}) => {
     const [color, setColor] = useState('#000000');
     const [elements, setElements] = useState([]);
     const [history, setHistory] = useState([]); 
-    const [openedUserTab , setOpenedUserTab] = useState(false);
-    const [openedChatTab , setOpenedChatTab] = useState(false);
+    const [openedUserTab, setOpenedUserTab] = useState(false);
+    const [openedChatTab, setOpenedChatTab] = useState(false);
     const [messages, setMessages] = useState([]);
 
     useEffect(() => {
@@ -72,62 +72,89 @@ const RoomPage = ({user,socket, users = []}) => {
     };  
 
 return (
-    <div className="row">
-        <button type="button" className="btn btn-dark"
-        style = {{
-                    display:"block" , 
-                    position:"absolute", 
-                    top:"5%", 
-                    left:"3%" ,
-                    height:"40px", 
-                    width:"72px"
-                }}
-                onClick={()=> {
-                    setOpenedChatTab(false);
-                    setOpenedUserTab(true);
-                }} 
-        >
-            Users
-        </button>
-        <button type="button" className="btn btn-primary"
-        style = {{
-                    display:"block" , 
-                    position:"absolute", 
-                    top:"5%", 
-                    left:"10%" ,
-                    height:"40px", 
-                    width:"72px"
-                }}
-                onClick={()=> {
-                    setOpenedUserTab(false);
-                    setOpenedChatTab(true);
-                }} 
-        >
-           Chats
-        </button>
-        {
-            openedUserTab && (
-                <div className="position-fixed top-0 h-100 text-white bg-dark" 
-                style={{width:"250px" , left:"0%"}}> 
-                <button type="button" 
-                onClick={()=> setOpenedUserTab(false)} 
-                className="btn btn-light btn-block w-100 mt-5">
-                    Close
+    <div className="room-page">
+        {/* ── Top Bar ── */}
+        <div className="room-topbar">
+            <div className="topbar-left">
+                <button 
+                    type="button" 
+                    className="topbar-btn"
+                    onClick={() => {
+                        setOpenedChatTab(false);
+                        setOpenedUserTab(true);
+                    }}
+                    title="Participants"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span className="topbar-btn-badge">{users.length}</span>
                 </button>
-                <div className="w-100 mt-5 pt-5 px-3">
-                    {users.map((roomUser , index) =>(
-                        <p key={`${roomUser.userId}-${index}`} className="my-2 w-100">
-                            {roomUser.name} {roomUser?.userId === user?.userId &&"(You)"}
-                            </p>
-                    ))}
+            </div>
+
+            <h1 className="room-title">
+                Whiteboard
+                <span className="online-badge">{users.length} online</span>
+            </h1>
+
+            <div className="topbar-right">
+                <button 
+                    type="button" 
+                    className="topbar-btn"
+                    onClick={() => {
+                        setOpenedUserTab(false);
+                        setOpenedChatTab(true);
+                    }}
+                    title="Chat"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span className="topbar-btn-label">Chat</span>
+                </button>
+            </div>
+        </div>
+
+        {/* ── Users Sidebar ── */}
+        {openedUserTab && (
+            <div className="sidebar-overlay" onClick={() => setOpenedUserTab(false)}>
+                <div className="sidebar sidebar-left" onClick={(e) => e.stopPropagation()}>
+                    <div className="sidebar-header">
+                        <h3>Participants</h3>
+                        <button 
+                            type="button" 
+                            onClick={() => setOpenedUserTab(false)}
+                            className="sidebar-close-btn"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div className="users-list">
+                        {users.map((usr, index) => (
+                            <div key={usr.userId || index} className="user-item">
+                                <div className="user-avatar">
+                                    {usr.name?.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="user-name">
+                                    {usr.name}
+                                    {user && usr.userId === user.userId && 
+                                        <span className="you-badge">You</span>
+                                    }
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-                </div>
-            )
-        }
-        {
-            openedChatTab && (
-                <div className="position-fixed top-0 h-100 text-white bg-dark chat-sidebar-wrap"
-                style={{width:"250px" , right:"0%"}}>
+            </div>
+        )}
+
+        {/* ── Chat Sidebar ── */}
+        {openedChatTab && (
+            <div className="sidebar-overlay" onClick={() => setOpenedChatTab(false)}>
+                <div className="sidebar sidebar-right" onClick={(e) => e.stopPropagation()}>
                     <Chat 
                         messages={messages}
                         currentUserId={user?.userId}
@@ -135,88 +162,100 @@ return (
                         onClose={() => setOpenedChatTab(false)}
                     />
                 </div>
-            )
-        }
-        <h1 className='text-center pt-3 py-3'>
-            White Board Sharing App {''}
-            <span className='text-primary'>[Users Online : {users.length}]</span>
-        </h1>
-        {
-            user?.presenter && (
-        <div className="col-md-12 mt-2 mb-3 d-flex align-items-center justify-content-around flex-wrap gap-4">
-            
-            <div className="d-flex align-items-center gap-2">
-                <label htmlFor="pencil">Pencil</label>
-                <input 
-                     type='radio' 
-                     id='pencil'
-                     checked={tool === 'pencil'}
-                     name='tool' 
-                     value='pencil' 
-                     onChange={(e) => setTool(e.target.value)} />
             </div>
+        )}
 
-            
-            <div className="d-flex align-items-center gap-2">
-                <label htmlFor="line">Line</label>
-                <input 
-                     type='radio'
-                     id='line'
-                     checked={tool === 'line'} 
-                     name='tool' 
-                     value='line' 
-                     onChange={(e) => setTool(e.target.value)} />
+        {/* ── Toolbar ── */}
+        {user?.presenter && (
+            <div className="toolbar">
+                <div className="toolbar-group">
+                    <button 
+                        className={`tool-btn ${tool === 'pencil' ? 'active' : ''}`}
+                        onClick={() => setTool('pencil')}
+                        title="Pencil"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                        </svg>
+                        <span className="tool-label">Pencil</span>
+                    </button>
+                    <button 
+                        className={`tool-btn ${tool === 'line' ? 'active' : ''}`}
+                        onClick={() => setTool('line')}
+                        title="Line"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="5" y1="19" x2="19" y2="5"/>
+                        </svg>
+                        <span className="tool-label">Line</span>
+                    </button>
+                    <button 
+                        className={`tool-btn ${tool === 'rect' ? 'active' : ''}`}
+                        onClick={() => setTool('rect')}
+                        title="Rectangle"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        </svg>
+                        <span className="tool-label">Rect</span>
+                    </button>
+                </div>
+
+                <div className="toolbar-group">
+                    <label className="color-picker-wrapper" title="Pick color">
+                        <input 
+                            type='color' 
+                            id='color' 
+                            value={color}
+                            className="color-input"
+                            onChange={(e) => setColor(e.target.value)} 
+                        />
+                        <span className="color-preview" style={{backgroundColor: color}}></span>
+                    </label>
+                </div>
+
+                <div className="toolbar-group">
+                    <button 
+                        className='action-btn'
+                        disabled={elements.length === 0}
+                        onClick={() => undo()}
+                        title="Undo"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="1 4 1 10 7 10"/>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                        </svg>
+                        <span className="tool-label">Undo</span>
+                    </button>
+                    <button 
+                        className='action-btn'
+                        disabled={history.length < 1}
+                        onClick={() => redo()}
+                        title="Redo"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                        </svg>
+                        <span className="tool-label">Redo</span>
+                    </button>
+                    <button 
+                        className='action-btn danger'
+                        onClick={handleClearCanvas}
+                        title="Clear canvas"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        <span className="tool-label">Clear</span>
+                    </button>
+                </div>
             </div>
+        )}
 
-        
-            <div className="d-flex align-items-center gap-2">
-                <label htmlFor="rect">Rectangle</label>
-                <input 
-                     type='radio' 
-                     id='rect'
-                     checked={tool === 'rect'}
-                     name='tool'
-                     value='rect' 
-                     onChange={(e) => setTool(e.target.value)} />
-            </div>
-
-           
-            <div className="d-flex flex-column align-items-center">
-                <label htmlFor="color">Color</label>
-                <input 
-                    type='color' 
-                    id='color' 
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)} 
-                />
-            </div>
-
-            
-            <div className="d-flex gap-2">
-                <button className='btn btn-primary' 
-                    disabled={elements.length === 0}
-                    onClick = {() => undo ()}
-                >Undo</button>
-                <button className='btn btn-outline-primary'
-                    disabled={history.length < 1}
-                    onClick = {() => redo ()}
-                >Redo</button>
-            </div>
-
-            
-            <div>
-                <button className='btn btn-danger' onClick={handleClearCanvas}>Clear Canvas</button>
-            </div>
-
-        </div>                
-            )
-        }
-
-
-
-
-
-        <div className="col-md-10 mx-auto mt-4 border canvas-box">
+        {/* ── Canvas ── */}
+        <div className="canvas-wrapper">
             <WhiteBoard 
                canvasRef={canvasRef} 
                ctxRef={ctxRef}
@@ -226,10 +265,8 @@ return (
                color={color}
                user={user}
                socket={socket}
-              />
-
+            />
         </div>
-
     </div>
   );
 };

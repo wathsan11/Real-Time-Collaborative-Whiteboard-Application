@@ -22,6 +22,9 @@ server.listen(port, "0.0.0.0", () => {
     console.log(`Server is running on port ${port}`)
 });
 
+// Store chat messages per room
+const roomMessages = {};
+
 io.on("connection", (socket) => {
 
     socket.on("userJoined", (data) => {
@@ -46,12 +49,37 @@ io.on("connection", (socket) => {
         socket.emit("UserIsJoined", { success: true, users: usersInRoom });
         socket.broadcast.to(roomId).emit("userJoinedMessageBroadcasted", name);
         socket.broadcast.to(roomId).emit("allUsers", usersInRoom);
+
+        // Send chat history to the newly joined user
+        if (roomMessages[roomId]) {
+            socket.emit("chatHistory", roomMessages[roomId]);
+        }
     });
 
     socket.on("whiteboardData", (data) => {
         socket.broadcast.to(socket.roomId).emit("whiteboardDataResponse", {
             imgURL: data
         });
+    });
+
+    socket.on("chatMessage", (data) => {
+        const roomId = socket.roomId;
+        if (!roomId) return;
+
+        const message = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            name: data.name,
+            text: data.text,
+            userId: data.userId,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+
+        // Store message
+        if (!roomMessages[roomId]) roomMessages[roomId] = [];
+        roomMessages[roomId].push(message);
+
+        // Broadcast to everyone in the room (including sender)
+        io.to(roomId).emit("chatMessageReceived", message);
     });
 
     socket.on("disconnect", () => {
@@ -64,6 +92,11 @@ io.on("connection", (socket) => {
                 .to(user.roomId)
                 .emit("userLeftMessageBroadcasted", user.name);
             socket.broadcast.to(user.roomId).emit("allUsers", usersInRoom);
+
+            // Clean up empty rooms
+            if (usersInRoom.length === 0 && roomMessages[user.roomId]) {
+                delete roomMessages[user.roomId];
+            }
         }
     });
 });
