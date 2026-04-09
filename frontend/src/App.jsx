@@ -6,7 +6,7 @@ import RoomPage from './pages/RoomPage';
 import io from "socket.io-client";
 import React, { useState, useEffect } from 'react';
 
-// If accessed via ngrok or production, use the same origin, otherwise fallback to local backend port
+
 const server = window.location.origin.includes('localhost') || window.location.origin.includes('192.168.') || window.location.origin.includes('127.0.0.1')
   ? "http://127.0.0.1:5001"
   : window.location.origin;
